@@ -89,3 +89,37 @@ def pairwise_similarity(
     # TODO(user): Add each resulting score to scores.
     # TODO(user): Complete the score list before it is returned.
     return scores
+
+
+def top_k_search(
+    query: list[float],
+    documents: list[list[float]],
+    k: int,
+) -> list[tuple[int, float]]:
+    """Return the document indexes and scores of the K most similar documents.
+
+    The score calculation and ranking steps are left for the learner to implement.
+    """
+    if k <= 0:
+        raise ValueError("k must be greater than zero.")
+
+    if not documents:
+        raise ValueError("Documents must not be empty.")
+
+    if k > len(documents):
+        raise ValueError("k must not exceed the number of documents.")
+
+    # TODO(user): Calculate all document scores with the existing pairwise function.
+    scores = pairwise_similarity(query, documents)
+    # TODO(user): Associate each score with its document index.
+    indexed_scores: list[tuple[int, float]] = []
+    for index, score in enumerate(scores):
+        indexed_scores.append((index, score))
+    # TODO(user): Sort the index-score pairs by similarity score.
+    ranked_results = sorted(indexed_scores, key=lambda result: result[1], reverse=True)
+    # TODO(user): Arrange the sorted results from highest score to lowest score.
+    top_k_results = ranked_results[:k]
+    return top_k_results
+    # TODO(user): Select the first k ranked results.
+    top_k_results: list[tuple[int, float]] = []
+    return top_k_results

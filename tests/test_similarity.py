@@ -1,6 +1,11 @@
 import pytest
 
-from vector_search.similarity import cosine_similarity, normalize_vector, pairwise_similarity
+from vector_search.similarity import (
+    cosine_similarity,
+    normalize_vector,
+    pairwise_similarity,
+    top_k_search,
+)
 
 
 def test_normalize_vector_returns_expected_values() -> None:
@@ -120,3 +125,64 @@ def test_pairwise_similarity_rejects_zero_vector_document() -> None:
 def test_pairwise_similarity_rejects_zero_vector_query() -> None:
     with pytest.raises(ValueError, match="zero vectors"):
         pairwise_similarity([0.0, 0.0], [[1.0, 0.0]])
+
+
+def test_top_k_search_returns_basic_top_two_ranking() -> None:
+    documents = [[0.0, 1.0], [1.0, 0.0], [0.8, 0.2], [-1.0, 0.0]]
+
+    results = top_k_search([1.0, 0.0], documents, k=2)
+
+    assert [result[0] for result in results] == [1, 2]
+    assert [result[1] for result in results] == pytest.approx([1.0, 0.9701425])
+    assert results[0][1] >= results[1][1]
+
+
+def test_top_k_search_with_k_one_returns_highest_ranked_document() -> None:
+    documents = [[0.0, 1.0], [1.0, 0.0], [0.8, 0.2]]
+
+    results = top_k_search([1.0, 0.0], documents, k=1)
+
+    assert len(results) == 1
+    assert results[0][0] == 1
+    assert results[0][1] == pytest.approx(1.0)
+
+
+def test_top_k_search_with_k_equal_to_document_count_returns_all_ranked() -> None:
+    documents = [[0.0, 1.0], [1.0, 0.0], [0.8, 0.2], [-1.0, 0.0]]
+
+    results = top_k_search([1.0, 0.0], documents, k=len(documents))
+
+    assert [result[0] for result in results] == [1, 2, 0, 3]
+    assert [result[1] for result in results] == pytest.approx([1.0, 0.9701425, 0.0, -1.0])
+
+
+def test_top_k_search_result_contains_document_index_and_score() -> None:
+    documents = [[0.0, 1.0], [1.0, 0.0]]
+
+    results = top_k_search([1.0, 0.0], documents, k=1)
+
+    assert isinstance(results[0], tuple)
+    document_index, similarity_score = results[0]
+    assert document_index == 1
+    assert similarity_score == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("k", [0, -1])
+def test_top_k_search_rejects_non_positive_k(k: int) -> None:
+    with pytest.raises(ValueError, match="greater than zero"):
+        top_k_search([1.0, 0.0], [[1.0, 0.0]], k=k)
+
+
+def test_top_k_search_rejects_k_larger_than_document_count() -> None:
+    with pytest.raises(ValueError, match="number of documents"):
+        top_k_search([1.0, 0.0], [[1.0, 0.0]], k=2)
+
+
+def test_top_k_search_rejects_empty_document_list() -> None:
+    with pytest.raises(ValueError, match="Documents must not be empty"):
+        top_k_search([1.0, 0.0], [], k=1)
+
+
+def test_top_k_search_propagates_document_dimension_mismatch() -> None:
+    with pytest.raises(ValueError, match="same number of dimensions"):
+        top_k_search([1.0, 0.0], [[1.0, 0.0, 0.0]], k=1)
