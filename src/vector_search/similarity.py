@@ -62,3 +62,30 @@ def cosine_similarity(
     similarity = dot_product / (a_norm * b_norm)
     return similarity
 
+
+def pairwise_similarity(
+    query: list[float],
+    documents: list[list[float]],
+) -> list[float]:
+    """Return one cosine-similarity score per document, in document order.
+
+    The document comparison steps are left for the learner to implement.
+    """
+    if not query:
+        raise ValueError("Query must not be empty.")
+
+    if not documents:
+        raise ValueError("Documents must not be empty.")
+
+    scores: list[float] = []
+    for document in documents:
+        score = cosine_similarity(query, document)
+        scores.append(score)
+    return scores
+
+    # Each document needs one score at the corresponding position in this list.
+    # TODO(user): Iterate through the documents in their original order.
+    # TODO(user): Use the existing cosine-similarity function for each document.
+    # TODO(user): Add each resulting score to scores.
+    # TODO(user): Complete the score list before it is returned.
+    return scores

@@ -1,6 +1,6 @@
 import pytest
 
-from vector_search.similarity import cosine_similarity, normalize_vector
+from vector_search.similarity import cosine_similarity, normalize_vector, pairwise_similarity
 
 
 def test_normalize_vector_returns_expected_values() -> None:
@@ -79,3 +79,44 @@ def test_similarity_functions_reject_empty_vectors(
 ) -> None:
     with pytest.raises(ValueError, match="must not be empty"):
         function(*arguments)
+
+
+def test_pairwise_similarity_scores_multiple_documents() -> None:
+    documents = [[1.0, 0.0], [0.0, 1.0], [-1.0, 0.0]]
+
+    scores = pairwise_similarity([1.0, 0.0], documents)
+
+    assert scores == pytest.approx([1.0, 0.0, -1.0])
+
+
+def test_pairwise_similarity_preserves_document_order() -> None:
+    documents = [[0.0, 1.0], [-1.0, 0.0], [1.0, 0.0]]
+
+    scores = pairwise_similarity([1.0, 0.0], documents)
+
+    assert scores == pytest.approx([0.0, -1.0, 1.0])
+
+
+def test_pairwise_similarity_rejects_empty_query() -> None:
+    with pytest.raises(ValueError, match="Query must not be empty"):
+        pairwise_similarity([], [[1.0, 0.0]])
+
+
+def test_pairwise_similarity_rejects_empty_document_list() -> None:
+    with pytest.raises(ValueError, match="Documents must not be empty"):
+        pairwise_similarity([1.0, 0.0], [])
+
+
+def test_pairwise_similarity_rejects_document_dimension_mismatch() -> None:
+    with pytest.raises(ValueError, match="same number of dimensions"):
+        pairwise_similarity([1.0, 0.0], [[1.0, 0.0, 0.0]])
+
+
+def test_pairwise_similarity_rejects_zero_vector_document() -> None:
+    with pytest.raises(ValueError, match="zero vectors"):
+        pairwise_similarity([1.0, 0.0], [[0.0, 0.0]])
+
+
+def test_pairwise_similarity_rejects_zero_vector_query() -> None:
+    with pytest.raises(ValueError, match="zero vectors"):
+        pairwise_similarity([0.0, 0.0], [[1.0, 0.0]])
